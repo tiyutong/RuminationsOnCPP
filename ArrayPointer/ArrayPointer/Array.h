@@ -2,7 +2,8 @@
 #include "Array_data.h"
 
 template <class T> class Pointer;
-template<class T> class Ptr_to_const;
+template <class T> class Ptr_to_const;
+
 template <class T> class Array
 {
 	friend class Pointer<T>;
