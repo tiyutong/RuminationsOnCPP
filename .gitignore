@@ -48,3 +48,6 @@ Temporary Items
 *.log
 *.pch
 *.pdb
+*.exe
+Seq/Debug/Seq.ilk
+Seq/ipch/seq-6eb51e7c/seq-85498315.ipch

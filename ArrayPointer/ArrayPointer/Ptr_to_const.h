@@ -172,7 +172,7 @@ template <class T>int operator!=
 	{
 		return 1;
 	}
-	return (op1.sub == op2.sub);
+	return (op1.sub != op2.sub);
 }
 
 template <class T>int operator>=
