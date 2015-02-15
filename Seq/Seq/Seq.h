@@ -1,46 +1,52 @@
 #pragma once
-#include "Seq_item.h"
-template <class T>
-class Seq
+
+template <typename T> class Seq_item;  
+
+template <class T> class Seq
 {
 public:
 	Seq(void);
 	Seq(const T&, const Seq&);
 	Seq(const Seq&);
-
 	~Seq(void);
 
 	Seq& operator=(const Seq&);
 	T hd() const;
 	Seq tl() const;
 	operator bool() const;
-	void destroy(Seq_item<T>* );
 	Seq& operator++();	//前置++
 	Seq operator++(int);
+	Seq& operator+=(const Seq&);
 	T operator*();
 	Seq& insert(const T&);
-
-	Seq_item<T>* owntail();
 	Seq& flip();
+	unsigned length() const;
 
 private:
+	Seq(Seq_item<T>* s,unsigned l);;
+	Seq_item<T>* owntail();
+	void destroy(Seq_item<T>* );
+	unsigned len;
 	Seq_item<T>* item;
-
-	Seq(Seq_item<T>* );
 };
 
-template <class T> Seq<T>:: Seq(void) : item(0)
+
+
+
+template <class T> 
+Seq<T>:: Seq(void) : item(0), len(0)
 {
 }
 
 template <class T>
 Seq<T>::Seq(const T& t, const Seq<T>& x) :
-	item(new Seq_item<T>(t,x.item))
+	item(new Seq_item<T>(t,x.item)), len(x.len + 1)
 {
 }
 
-template <class T>
-Seq<T>::Seq(Seq_item<T>* s) : item(s)
+template<class T>
+Seq<T>::Seq(Seq_item<T>* s,unsigned l) :
+	item(s), len(l)
 {
 	if(s)
 	{
@@ -55,7 +61,7 @@ Seq<T>::operator bool() const
 }
 
 template <class T>
-Seq<T>::Seq(const Seq<T>& s) : item(s.item)
+Seq<T>::Seq(const Seq<T>& s) : item(s.item), len(s.len)
 {
 	if(item)
 	{
@@ -81,7 +87,7 @@ Seq<T> Seq<T>::tl()const
 {
 	if(item)
 	{
-		return Seq<T>(item->next);
+		return Seq<T>(item->next, len - 1);
 	}
 	else
 	{
@@ -98,6 +104,7 @@ Seq<T>& Seq<T>::operator=(const Seq<T>& s)
 	}
 	destroy(item);
 	item = s.item;
+	len = s.len;
 	return *this;
 }
 
@@ -118,23 +125,6 @@ void Seq<T>::destroy(Seq_item<T>* item)
 	}
 }
 
-template <class T>
-Seq<T> cons(const T& t,const Seq<T> &s)
-{
-	return Seq<T>(t,s);
-}
-
-template<class T>
-int length(Seq<T> s)
-{
-	int n = 0;
-	while(s)
-	{
-		s = s.tl();
-		n++;
-	}
-	return n;
-}
 
 template<class T>
 Seq<T>& Seq<T>:: operator++()
@@ -181,8 +171,120 @@ template<class T>
 Seq<T>& Seq<T>::insert(const T& t)
 {
 	item = new Seq_item<T>(t, item);
+	len++;
 	return *this;
 }
+
+template<class T>
+Seq_item<T>* Seq<T>:: owntail()
+{
+	if(item == 0)
+	{
+		return 0;
+	}
+
+	Seq_item<T>* i = item;
+	Seq_item<T>** p = &item;
+	while(i->use == 1)
+	{
+		if(i->next == 0)
+		{
+			return i;
+		}
+		p = &i->next;
+		i = i->next;
+	}
+
+	*p = new Seq_item<T>(i->data);
+	--i->use;
+	i = i->next;
+
+	Seq_item<T>* j = *p;
+	while(i)
+	{
+		j->next = new Seq_item<T>(i->data);
+		i = i->next;
+		j = j->next;
+	}
+	return j;
+}
+
+
+template<class T>
+Seq<T>& Seq<T>::flip()
+{
+	if(item)
+	{
+		Seq_item<T>* k = owntail();
+		Seq_item<T>* curr = item;
+		Seq_item<T>* behind = 0;
+
+		do
+		{
+			Seq_item<T>* ahead = curr->next;
+			curr->next = behind;
+			behind = curr;
+			curr = ahead;
+		}while(curr);
+		item = k;
+	}
+	return *this;
+}
+
+template<class T>
+Seq<T>& Seq<T>::operator+=(const Seq<T>& s)
+{
+	// 连接之前颠倒现有序列  
+    flip();  
+    Seq_item<T>* k = owntail();  
+
+    Seq_item<T>* q = s.item;  
+  
+    // 将新序列的各结点插入到原来的序列  
+    while (q) {  
+            insert(q->data);  
+            q = q->next;  
+    }  
+    flip();  
+    return *this;  
+}
+
+template<class T>
+unsigned Seq<T>::length() const
+{
+	return len;
+}
+
+template<class T>
+Seq<T> operator+(Seq<T> s1, Seq<T> s2)
+{
+	return s1.operator+=(s2);
+}
+
+template<class T>
+bool operator==(const Seq<T>& op1, const Seq<T>& op2)
+{
+	if(op1.length() != op2.length())
+	{
+		return false;
+	}
+
+	Seq_item<T>* p = op1.item;
+	Seq_item<T>* q = op2.item;
+
+	while(p != q)
+	{
+		assert((p != 0) && (q != 0));
+		if(*p++ != *q++)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+
 
 template<class T>
 Seq<T> merge(const Seq<T>& x, const Seq<T>& y)
@@ -266,58 +368,21 @@ Seq<T> merge2(Seq<T> x, Seq<T> y)
 	return r;
 }
 
-template<class T>
-Seq_item<T>* Seq<T>:: owntail()
+
+template <class T>
+Seq<T> cons(const T& t,const Seq<T> &s)
 {
-	if(item == 0)
-	{
-		return 0;
-	}
-
-	Seq_item<T>* i = item;
-	Seq_item<T>** p = &item;
-	while(i->use == 1)
-	{
-		if(i->next == 0)
-		{
-			return i;
-		}
-		p = &i->next;
-		i = i->next;
-	}
-
-	*p = new Seq_item<T>(i->data);
-	--i->use;
-	i = i->next;
-
-	Seq_item<T>* j = *p;
-	while(i)
-	{
-		j->next = new Seq_item<T>(i->data);
-		i = i->next;
-		j = j->next;
-	}
-	return j;
+	return Seq<T>(t,s);
 }
 
-
 template<class T>
-Seq<T>& Seq<T>::flip()
+int length(Seq<T> s)
 {
-	if(item)
+	int n = 0;
+	while(s)
 	{
-		Seq_item<T>* k = owntail();
-		Seq_item<T>* curr = item;
-		Seq_item<T>* behind = 0;
-
-		do
-		{
-			Seq_item<T>* ahead = curr->next;
-			curr->next = behind;
-			behind = curr;
-			curr = ahead;
-		}while(curr);
-		item = k;
+		s = s.tl();
+		n++;
 	}
-	return *this;
+	return n;
 }

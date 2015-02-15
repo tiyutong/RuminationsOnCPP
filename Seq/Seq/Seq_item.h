@@ -10,6 +10,7 @@ template <class T> class Seq_item
 
 public:
 	Seq_item(const T& t, Seq_item* s);
+	Seq_item(const T& t);  
 	~Seq_item(void)
 	{
 	}
@@ -25,3 +26,6 @@ Seq_item<T>::Seq_item(const T& t, Seq_item<T> *s) :
 	}
 }
 
+template <typename T>  
+Seq_item<T>::Seq_item(const T& t):
+	use(1), data(t), next(0) { }  
